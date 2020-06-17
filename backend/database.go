@@ -39,4 +39,11 @@ func CreatNewUser(email string, name string) {
 	rdb.Do(ctx, "HMSET", "user:"+email, "name", name, "email", email)
 }
 
+func ValidateUserInformation(email string) {
+	ctx := context.Background()
+	rdb := newClient()
+	result := rdb.Do(ctx, "HGET", "user:"+email, "name")
+	fmt.Println(result)
+}
+
 

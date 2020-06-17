@@ -8,5 +8,6 @@ import (
 
 func main() {
 	fmt.Println("mario")
-	backend.CreatNewUser("cj@gmail.com", "cj")
+	//backend.Mario()
+	backend.ValidateUserInformation("kai@gmail.com")
 }
