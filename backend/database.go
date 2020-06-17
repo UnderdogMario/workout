@@ -32,18 +32,32 @@ func goDotEnvVariable(key string) string {
 	return os.Getenv(key)
 }
 
-func CreatNewUser(email string, name string) {
+func CreatNewUser(email string, name string, password string) {
 	//Get new connection
 	ctx := context.Background()
 	rdb := newClient()
-	rdb.Do(ctx, "HMSET", "user:"+email, "name", name, "email", email)
+	rdb.Do(ctx, "HMSET", "user:"+email, "name", name, "email", email, "password", password)
 }
 
-func ValidateUserInformation(email string) {
+func ValidateUserInformation(email string, password string) bool{
 	ctx := context.Background()
 	rdb := newClient()
-	result := rdb.Do(ctx, "HGET", "user:"+email, "name")
-	fmt.Println(result)
+	result, err := rdb.HGet(ctx, "user:"+email, "password").Result()
+
+	if err == redis.Nil {
+		fmt.Println("Login Fail")
+		return false
+	} else if err != nil {
+		panic(err)
+	} else {
+		if result == password {
+			fmt.Println("Login Success")
+			return true
+		} else {
+			fmt.Println("Login Fail")
+			return false
+		}
+	}
 }
 
 

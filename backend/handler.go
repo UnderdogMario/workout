@@ -19,7 +19,7 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 	var email string
 	var password string
 	for key, value := range request.Form {
-		if key == "name" {
+		if key == "email" {
 			email = value[0]
 		}
 		if key == "password" {
@@ -29,7 +29,12 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 	if email == "" || password == "" {
 		fmt.Fprint(writer, "Failure, You pass bad data")
 	} else {
-		fmt.Fprint(writer, "Success")
+		result := ValidateUserInformation(email, password)
+		if result {
+			fmt.Fprint(writer, "You successful login")
+		} else {
+			fmt.Fprint(writer, "Your information is incorrect")
+		}
 	}
 }
 

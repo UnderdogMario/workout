@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func Mario()  {
+func Router()  {
 	router := mux.NewRouter()
 	const port string = ":8000"
 	router.HandleFunc("/", DefaultHandler)
