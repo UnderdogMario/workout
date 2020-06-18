@@ -1,29 +1,27 @@
 package backend
 
 import (
-	"context"
 	"fmt"
-	"github.com/go-redis/redis/v8"
+	"github.com/gomodule/redigo/redis"
 	"github.com/joho/godotenv"
+	uuid "github.com/satori/go.uuid"
 	"log"
 	"os"
 )
 
-func newClient() *redis.Client {
-	address := GoDotEnvVariable("ADDRESS")
-	password := GoDotEnvVariable("PASSWORD")
-	ctx := context.Background()
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     address,
-		Password: password,
-		DB:       0,
-	})
-	pong, err := rdb.Ping(ctx).Result()
-	fmt.Println(pong, err)
-	return rdb
+// get a connection
+func initCache() redis.Conn{
+	address := goDotEnvVariable("ADDRESS")
+	password := goDotEnvVariable("PASSWORD")
+	conn, err := redis.Dial("tcp",address, redis.DialPassword(password))
+	if err != nil {
+		panic(err)
+	}
+	return conn
 }
 
-func GoDotEnvVariable(key string) string {
+// read env data
+func goDotEnvVariable(key string) string {
 	// load .env file
 	err := godotenv.Load(".env")
 	if err != nil {
@@ -32,23 +30,16 @@ func GoDotEnvVariable(key string) string {
 	return os.Getenv(key)
 }
 
-func CreatNewUser(email string, name string, password string) {
-	//Get new connection
-	ctx := context.Background()
-	rdb := newClient()
-	rdb.Do(ctx, "HMSET", "user:"+email, "name", name, "email", email, "password", password)
-}
-
+//takes email and password, and return true if the password is correct
 func ValidateUserInformation(email string, password string) bool{
-	ctx := context.Background()
-	rdb := newClient()
-	result, err := rdb.HGet(ctx, "user:"+email, "password").Result()
-
-	if err == redis.Nil {
-		fmt.Println("Login Fail")
+	conn := initCache()
+	result, err := redis.String(conn.Do("HGET", "user:"+email, "password"))
+	if err != nil {
+		log.Fatal(err)
 		return false
-	} else if err != nil {
-		panic(err)
+	} else if result == ""  {
+		fmt.Println("Account Don't Exist")
+		return false
 	} else {
 		if result == password {
 			fmt.Println("Login Success")
@@ -60,4 +51,12 @@ func ValidateUserInformation(email string, password string) bool{
 	}
 }
 
-
+// this takes in a redis connection and a email to generate a session-id for that user
+func CreateSessionToken(email string) string{
+	sessionToken := uuid.NewV4().String()
+	_, err := initCache().Do("SETEX", sessionToken, "1200", email)
+	if err != nil {
+		return ""
+	}
+	return sessionToken
+}

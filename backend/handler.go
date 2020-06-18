@@ -1,8 +1,10 @@
 package backend
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 type User struct {
@@ -10,45 +12,56 @@ type User struct {
 	Password string `json: "password"`
 }
 
+// default handler to see the connection is running
 func DefaultHandler(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprintln(writer, "Default, Up And Running, Good Connection")
 }
 
+// this is setup to avoid CORS policy
 func setupResponse(w *http.ResponseWriter, req *http.Request) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 }
 
+// this is used to handle user login, and will give the user a cookie, if the
+// user password and email is correct
 func LoginHandler(writer http.ResponseWriter, request *http.Request) {
-	//fmt.Println(request)
+	var user User
 	setupResponse(&writer, request)
 	if (*request).Method == "OPTIONS" {
 		return
 	}
 
-	request.ParseForm()
 
-	var email string
-	var password string
-	for key, value := range request.Form {
-		fmt.Println(key, value)
-		if key == "email" {
-			email = value[0]
-		}
-		if key == "password" {
-			password = value[0]
-		}
+	err := json.NewDecoder(request.Body).Decode(&user)
+
+
+	// the request body have something wrong
+	if err != nil || user.Email == "" || user.Password == ""{
+		writer.WriteHeader(http.StatusBadRequest)
+		return
 	}
-	if email == "" || password == "" {
-		fmt.Fprint(writer, "Failure, You pass bad data")
-	} else {
-		result := ValidateUserInformation(email, password)
-		if result {
-			fmt.Fprint(writer, "You successful login")
-		} else {
-			fmt.Fprint(writer, "Your information is incorrect")
-		}
+
+	// validate the data passed in
+	if !ValidateUserInformation(user.Email, user.Password) {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
 	}
+
+	// generate session token
+	sessionToken := CreateSessionToken(user.Email)
+
+	// see if the session token is successfully generated
+	if sessionToken == "" {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(writer, &http.Cookie{
+		Name:    "session_token",
+		Value:   sessionToken,
+		Expires: time.Now().Add(120 * time.Second),
+	})
 }
 
