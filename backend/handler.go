@@ -26,7 +26,9 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 	if (*request).Method == "OPTIONS" {
 		return
 	}
+
 	request.ParseForm()
+
 	var email string
 	var password string
 	for key, value := range request.Form {

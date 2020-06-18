@@ -10,8 +10,8 @@ import (
 )
 
 func newClient() *redis.Client {
-	address := goDotEnvVariable("ADDRESS")
-	password := goDotEnvVariable("PASSWORD")
+	address := GoDotEnvVariable("ADDRESS")
+	password := GoDotEnvVariable("PASSWORD")
 	ctx := context.Background()
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     address,
@@ -23,7 +23,7 @@ func newClient() *redis.Client {
 	return rdb
 }
 
-func goDotEnvVariable(key string) string {
+func GoDotEnvVariable(key string) string {
 	// load .env file
 	err := godotenv.Load(".env")
 	if err != nil {
