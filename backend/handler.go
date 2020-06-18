@@ -33,9 +33,7 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-
 	err := json.NewDecoder(request.Body).Decode(&user)
-
 
 	// the request body have something wrong
 	if err != nil || user.Email == "" || user.Password == ""{
@@ -65,3 +63,28 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 	})
 }
 
+// this is used to handle user register for a new account
+func RegisterHandler(writer http.ResponseWriter, request *http.Request)  {
+	var user User
+	setupResponse(&writer, request)
+	if (*request).Method == "OPTIONS" {
+		return
+	}
+	err := json.NewDecoder(request.Body).Decode(&user)
+
+	// the request body have something wrong
+	if err != nil || user.Email == "" || user.Password == ""{
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	// create new user for the client
+	if !CreateNewUser(user.Email, user.Password) {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	} else {
+		writer.WriteHeader(http.StatusAccepted)
+		writer.Write([]byte("Success, Your account is created"))
+		return
+	}
+
+}

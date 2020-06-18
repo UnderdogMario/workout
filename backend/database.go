@@ -10,7 +10,7 @@ import (
 )
 
 // get a connection
-func initCache() redis.Conn{
+func initConnection() redis.Conn{
 	address := goDotEnvVariable("ADDRESS")
 	password := goDotEnvVariable("PASSWORD")
 	conn, err := redis.Dial("tcp",address, redis.DialPassword(password))
@@ -32,7 +32,7 @@ func goDotEnvVariable(key string) string {
 
 //takes email and password, and return true if the password is correct
 func ValidateUserInformation(email string, password string) bool{
-	conn := initCache()
+	conn := initConnection()
 	result, err := redis.String(conn.Do("HGET", "user:"+email, "password"))
 	if err != nil {
 		log.Fatal(err)
@@ -54,9 +54,25 @@ func ValidateUserInformation(email string, password string) bool{
 // this takes in a redis connection and a email to generate a session-id for that user
 func CreateSessionToken(email string) string{
 	sessionToken := uuid.NewV4().String()
-	_, err := initCache().Do("SETEX", sessionToken, "1200", email)
+	_, err := initConnection().Do("SETEX", sessionToken, "1200", email)
 	if err != nil {
 		return ""
 	}
 	return sessionToken
+}
+
+// create new user
+func CreateNewUser(email string, password string) bool {
+	if email == "" || password == "" {
+		return false
+	}
+	conn := initConnection()
+	redisEmail, _ := redis.String(conn.Do("HGET", "user:"+email, "email"))
+
+	if redisEmail != "" {
+		fmt.Println("user already exist")
+		return false
+	}
+	conn.Do("HMSET", "user:"+email, "email", email, "password", password)
+	return true
 }
