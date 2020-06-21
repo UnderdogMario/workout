@@ -35,7 +35,6 @@ func ValidateUserInformation(email string, password string) bool{
 	conn := initConnection()
 	result, err := redis.String(conn.Do("HGET", "user:"+email, "password"))
 	if err != nil {
-		log.Fatal(err)
 		return false
 	} else if result == ""  {
 		fmt.Println("Account Don't Exist")
