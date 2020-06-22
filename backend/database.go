@@ -42,6 +42,13 @@ func ValidateUserInformation(email string, password string) bool{
 	} else {
 		if result == password {
 			fmt.Println("Login Success")
+			userInfo, _ := redis.Values(conn.Do("HMGET", "user:"+email, "name", "email", "phone"))
+
+			fmt.Println("userinfo",userInfo)
+
+			for _, v := range userInfo {
+				fmt.Printf("%s ", v.([]byte))
+			}
 			return true
 		} else {
 			fmt.Println("Login Fail")
@@ -75,3 +82,4 @@ func CreateNewUser(email string, password string) bool {
 	conn.Do("HMSET", "user:"+email, "email", email, "password", password)
 	return true
 }
+
