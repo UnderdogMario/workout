@@ -6,11 +6,6 @@ import (
 	"net/http"
 )
 
-type User struct {
-	Email string `json: "email"`
-	Password string `json: "password"`
-}
-
 // default handler to see the connection is running
 func DefaultHandler(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprintln(writer, "Default, Up And Running, Good Connection")
@@ -42,8 +37,9 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	success, userInfo := ValidateUserInformation(user.Email, user.Password)
 	// validate the data passed in
-	if !ValidateUserInformation(user.Email, user.Password) {
+	if !success{
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -56,7 +52,9 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
 	writer.Header().Set("X-Auth", sessionToken)
+	json.NewEncoder(writer).Encode(userInfo)
 }
 
 // this is used to handle user register for a new account

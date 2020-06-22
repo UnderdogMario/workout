@@ -31,28 +31,24 @@ func goDotEnvVariable(key string) string {
 }
 
 //takes email and password, and return true if the password is correct
-func ValidateUserInformation(email string, password string) bool{
+func ValidateUserInformation(email string, password string) (bool, UserInfo){
 	conn := initConnection()
+	defer conn.Close()
+	var userInfo = UserInfo{}
 	result, err := redis.String(conn.Do("HGET", "user:"+email, "password"))
 	if err != nil {
-		return false
+		return false, userInfo
 	} else if result == ""  {
 		fmt.Println("Account Don't Exist")
-		return false
+		return false, userInfo
 	} else {
 		if result == password {
 			fmt.Println("Login Success")
-			userInfo, _ := redis.Values(conn.Do("HMGET", "user:"+email, "name", "email", "phone"))
-
-			fmt.Println("userinfo",userInfo)
-
-			for _, v := range userInfo {
-				fmt.Printf("%s ", v.([]byte))
-			}
-			return true
+			userInfo := getUserInfo(email, conn, userInfo)
+			return true, userInfo
 		} else {
 			fmt.Println("Login Fail")
-			return false
+			return false, userInfo
 		}
 	}
 }
@@ -73,7 +69,9 @@ func CreateNewUser(email string, password string) bool {
 		return false
 	}
 	conn := initConnection()
+	defer conn.Close()
 	redisEmail, _ := redis.String(conn.Do("HGET", "user:"+email, "email"))
+
 
 	if redisEmail != "" {
 		fmt.Println("user already exist")
@@ -81,5 +79,16 @@ func CreateNewUser(email string, password string) bool {
 	}
 	conn.Do("HMSET", "user:"+email, "email", email, "password", password)
 	return true
+}
+
+func getUserInfo(email string, conn redis.Conn, userInfo UserInfo) UserInfo{
+	v, err := redis.Values(conn.Do("HGETALL", "user:"+email))
+	if err != nil {
+		fmt.Println(err)
+	}
+	if err := redis.ScanStruct(v,&userInfo); err != nil {
+		fmt.Println(err)
+	}
+	return userInfo
 }
 
