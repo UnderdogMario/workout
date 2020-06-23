@@ -12,6 +12,7 @@ func Router()  {
 	router.HandleFunc("/", DefaultHandler)
 	router.HandleFunc("/login", LoginHandler).Methods("POST")
 	router.HandleFunc("/register", RegisterHandler).Methods("POST")
+	router.HandleFunc("/userInfo/update", UserProfileUpdateHandler).Methods("POST")
 	log.Println("Server listening on port", port)
 	log.Fatal(http.ListenAndServe(port, router))
 }

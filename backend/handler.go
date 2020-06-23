@@ -82,3 +82,19 @@ func RegisterHandler(writer http.ResponseWriter, request *http.Request)  {
 	}
 
 }
+
+// this is used to handle user update their information
+func UserProfileUpdateHandler(writer http.ResponseWriter, request *http.Request)  {
+	setupResponse(&writer, request)
+	if (*request).Method == "OPTIONS" {
+		return
+	}
+	sid := request.Header.Get("X-Auth")
+	if !ValidateSessionID(sid) {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	var userInfo UserInfo
+	json.NewDecoder(request.Body).Decode(&userInfo)
+	UserProfileUpdate(userInfo)
+}

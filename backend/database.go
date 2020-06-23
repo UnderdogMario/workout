@@ -56,7 +56,7 @@ func ValidateUserInformation(email string, password string) (bool, UserInfo){
 // this takes in a redis connection and a email to generate a session-id for that user
 func CreateSessionToken(email string) string{
 	sessionToken := uuid.NewV4().String()
-	_, err := initConnection().Do("SETEX", sessionToken, "1200", email)
+	_, err := initConnection().Do("SETEX", sessionToken, "99999", email)
 	if err != nil {
 		return ""
 	}
@@ -72,7 +72,6 @@ func CreateNewUser(email string, password string) bool {
 	defer conn.Close()
 	redisEmail, _ := redis.String(conn.Do("HGET", "user:"+email, "email"))
 
-
 	if redisEmail != "" {
 		fmt.Println("user already exist")
 		return false
@@ -81,6 +80,7 @@ func CreateNewUser(email string, password string) bool {
 	return true
 }
 
+// this will return all user information
 func getUserInfo(email string, conn redis.Conn, userInfo UserInfo) UserInfo{
 	v, err := redis.Values(conn.Do("HGETALL", "user:"+email))
 	if err != nil {
@@ -92,3 +92,22 @@ func getUserInfo(email string, conn redis.Conn, userInfo UserInfo) UserInfo{
 	return userInfo
 }
 
+// this will validate whether the session expire
+func ValidateSessionID(sid string) bool {
+	conn := initConnection()
+	defer conn.Close()
+	v, _ := redis.String(conn.Do("GET", sid))
+	if v == "" {
+		fmt.Println("Session ID invalid")
+		return false
+	} else {
+		return true
+	}
+}
+
+// this takes the new userInfo and update the database
+func UserProfileUpdate(userInfo UserInfo) {
+	conn := initConnection()
+	defer conn.Close()
+	conn.Do("HMSET", redis.Args{}.Add("user:"+userInfo.Email).AddFlat(&userInfo)...)
+}

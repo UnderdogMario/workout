@@ -6,7 +6,7 @@ type User struct {
 }
 
 type UserInfo struct {
-	Name  string `redis:"name"`
-	Email string `redis:"email"`
-	Phone   string `redis:"phone"`
+	Name  string `redis:"name" json: "name"`
+	Email string `redis:"email" json: "email"`
+	Phone   string `redis:"phone" json: "phone"`
 }
